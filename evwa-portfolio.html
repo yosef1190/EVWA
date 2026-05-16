@@ -1,0 +1,2377 @@
+git <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EVWA — Ethiopian Vulnerable Web Academy</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Noto+Sans+Ethiopic:wght@300;400;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #030a06;
+    --bg2: #050f08;
+    --surface: #071310;
+    --surface2: #0c1f1a;
+    --green: #00ff88;
+    --green-dim: #00cc6a;
+    --green-muted: #004d29;
+    --amber: #ffb300;
+    --red: #ff3d3d;
+    --blue: #00d4ff;
+    --text: #c8ffd4;
+    --text-dim: #5a8a6a;
+    --text-muted: #2a4a35;
+    --border: #0e2e20;
+    --glow: 0 0 20px rgba(0,255,136,0.3);
+    --glow-strong: 0 0 40px rgba(0,255,136,0.5);
+    --font-mono: 'Share Tech Mono', monospace;
+    --font-display: 'Orbitron', sans-serif;
+    --font-body: 'Space Mono', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 1.7;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* CUSTOM CURSOR */
+  .cursor {
+    width: 12px; height: 12px;
+    background: var(--green);
+    border-radius: 50%;
+    position: fixed;
+    top: 0; left: 0;
+    pointer-events: none;
+    z-index: 9999;
+    transition: transform 0.1s ease;
+    box-shadow: 0 0 15px var(--green);
+  }
+  .cursor-trail {
+    width: 30px; height: 30px;
+    border: 1px solid rgba(0,255,136,0.4);
+    border-radius: 50%;
+    position: fixed;
+    top: 0; left: 0;
+    pointer-events: none;
+    z-index: 9998;
+    transition: all 0.15s ease;
+  }
+
+  /* CANVAS */
+  #matrix-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    opacity: 0.04;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* SCANLINES */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* NOISE OVERLAY */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.5;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0; width: 100%;
+    z-index: 100;
+    padding: 0 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(3,10,6,0.85);
+    backdrop-filter: blur(16px);
+  }
+
+  .nav-logo {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: 4px;
+    color: var(--green);
+    text-shadow: var(--glow);
+    position: relative;
+  }
+
+  .nav-logo span {
+    color: var(--amber);
+  }
+
+  .nav-logo::after {
+    content: '_';
+    animation: blink 1s step-end infinite;
+  }
+
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .nav-links {
+    display: flex;
+    gap: 36px;
+    list-style: none;
+  }
+
+  .nav-links a {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    transition: color 0.2s, text-shadow 0.2s;
+    position: relative;
+  }
+
+  .nav-links a::before {
+    content: '// ';
+    color: var(--green-muted);
+  }
+
+  .nav-links a:hover {
+    color: var(--green);
+    text-shadow: var(--glow);
+  }
+
+  .nav-cta {
+    padding: 8px 20px;
+    border: 1px solid var(--green);
+    color: var(--green) !important;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: all 0.2s;
+    box-shadow: 0 0 10px rgba(0,255,136,0.1);
+  }
+
+  .nav-cta::before { display: none; }
+
+  .nav-cta:hover {
+    background: var(--green) !important;
+    color: var(--bg) !important;
+    box-shadow: var(--glow-strong);
+  }
+
+  /* HERO */
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    padding: 120px 48px 80px;
+    z-index: 2;
+  }
+
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .hero-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--green);
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .hero-eyebrow::before {
+    content: '';
+    width: 40px; height: 1px;
+    background: var(--green);
+    box-shadow: var(--glow);
+  }
+
+  .hero-title {
+    font-family: var(--font-display);
+    font-size: clamp(42px, 6vw, 80px);
+    font-weight: 900;
+    line-height: 0.9;
+    letter-spacing: -1px;
+    margin-bottom: 32px;
+  }
+
+  .hero-title .line1 { color: var(--green); text-shadow: var(--glow-strong); }
+  .hero-title .line2 { color: var(--text); }
+  .hero-title .line3 { color: var(--text-dim); font-weight: 400; font-size: 0.5em; letter-spacing: 8px; text-transform: uppercase; margin-top: 8px; display: block; }
+
+  .hero-amharic {
+    font-family: 'Noto Sans Ethiopic', sans-serif;
+    font-size: 28px;
+    color: var(--amber);
+    margin-bottom: 24px;
+    opacity: 0.8;
+    text-shadow: 0 0 20px rgba(255,179,0,0.3);
+  }
+
+  .hero-desc {
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.8;
+    margin-bottom: 40px;
+    max-width: 480px;
+  }
+
+  .hero-desc strong {
+    color: var(--green);
+    font-weight: normal;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary {
+    padding: 14px 32px;
+    background: var(--green);
+    color: var(--bg);
+    text-decoration: none;
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    box-shadow: 0 0 30px rgba(0,255,136,0.4);
+    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+  }
+
+  .btn-primary:hover {
+    box-shadow: 0 0 60px rgba(0,255,136,0.7);
+    transform: translateY(-2px);
+  }
+
+  .btn-outline {
+    padding: 14px 32px;
+    border: 1px solid var(--green-muted);
+    color: var(--text-dim);
+    text-decoration: none;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+  }
+
+  .btn-outline:hover {
+    border-color: var(--green);
+    color: var(--green);
+    background: rgba(0,255,136,0.05);
+  }
+
+  /* TERMINAL WINDOW */
+  .hero-terminal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 0 60px rgba(0,0,0,0.8), 0 0 30px rgba(0,255,136,0.05);
+    position: relative;
+  }
+
+  .terminal-header {
+    padding: 12px 16px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .terminal-dots span {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 4px;
+  }
+
+  .terminal-dots .dot-red { background: #ff5f57; }
+  .terminal-dots .dot-yellow { background: #febc2e; }
+  .terminal-dots .dot-green { background: #28c840; }
+
+  .terminal-title {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .terminal-body {
+    padding: 24px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.9;
+    min-height: 340px;
+  }
+
+  .t-prompt { color: var(--green); }
+  .t-cmd { color: var(--text); }
+  .t-output { color: var(--text-dim); }
+  .t-success { color: var(--green); }
+  .t-warn { color: var(--amber); }
+  .t-error { color: var(--red); }
+  .t-info { color: var(--blue); }
+
+  .t-line { display: block; margin-bottom: 2px; }
+
+  .t-cursor {
+    display: inline-block;
+    width: 8px; height: 14px;
+    background: var(--green);
+    animation: blink 0.8s step-end infinite;
+    vertical-align: middle;
+  }
+
+  /* STATS BAR */
+  .stats-bar {
+    position: relative;
+    z-index: 2;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 0 48px;
+  }
+
+  .stats-inner {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .stat-item {
+    padding: 32px 24px;
+    border-right: 1px solid var(--border);
+    transition: background 0.2s;
+  }
+
+  .stat-item:last-child { border-right: none; }
+  .stat-item:hover { background: rgba(0,255,136,0.02); }
+
+  .stat-number {
+    font-family: var(--font-display);
+    font-size: 40px;
+    font-weight: 900;
+    color: var(--green);
+    text-shadow: var(--glow);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .stat-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  /* SECTIONS */
+  section {
+    position: relative;
+    z-index: 2;
+    padding: 100px 48px;
+  }
+
+  .section-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: var(--green);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-label::before {
+    content: '/*';
+    color: var(--text-muted);
+  }
+
+  .section-label::after {
+    content: '*/';
+    color: var(--text-muted);
+  }
+
+  .section-title {
+    font-family: var(--font-display);
+    font-size: clamp(28px, 4vw, 48px);
+    font-weight: 900;
+    line-height: 1.1;
+    color: var(--text);
+    margin-bottom: 20px;
+  }
+
+  .section-title em {
+    color: var(--green);
+    font-style: normal;
+    text-shadow: var(--glow);
+  }
+
+  .section-desc {
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.8;
+    max-width: 560px;
+    margin-bottom: 64px;
+  }
+
+  /* ABOUT */
+  .about-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 64px;
+    align-items: center;
+  }
+
+  .about-text p {
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.9;
+    margin-bottom: 20px;
+  }
+
+  .about-text strong { color: var(--green); font-weight: normal; }
+
+  .about-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 32px;
+  }
+
+  .tag {
+    padding: 6px 14px;
+    border: 1px solid var(--green-muted);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    transition: all 0.2s;
+  }
+
+  .tag:hover {
+    border-color: var(--green);
+    color: var(--green);
+    box-shadow: 0 0 10px rgba(0,255,136,0.2);
+  }
+
+  .about-visual {
+    position: relative;
+  }
+
+  .owasp-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+  }
+
+  .owasp-item {
+    padding: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .owasp-item::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: var(--green-muted);
+    transition: background 0.2s;
+  }
+
+  .owasp-item:hover::before { background: var(--green); }
+  .owasp-item:hover { background: rgba(0,255,136,0.03); }
+
+  .owasp-num {
+    font-family: var(--font-display);
+    font-size: 10px;
+    color: var(--green-muted);
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+  }
+
+  .owasp-name {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text);
+    line-height: 1.4;
+  }
+
+  .owasp-item:hover .owasp-name { color: var(--green); }
+
+  /* FEATURES */
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+  }
+
+  .feature-card {
+    padding: 36px 28px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+    group: feature;
+  }
+
+  .feature-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 0%; height: 1px;
+    background: var(--green);
+    transition: width 0.3s ease;
+    box-shadow: var(--glow);
+  }
+
+  .feature-card:hover::after { width: 100%; }
+  .feature-card:hover { background: rgba(0,255,136,0.02); transform: translateY(-4px); }
+
+  .feature-icon {
+    width: 48px; height: 48px;
+    border: 1px solid var(--green-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    font-size: 20px;
+    transition: all 0.3s;
+    clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
+  }
+
+  .feature-card:hover .feature-icon {
+    border-color: var(--green);
+    background: rgba(0,255,136,0.1);
+    box-shadow: 0 0 20px rgba(0,255,136,0.2);
+  }
+
+  .feature-title {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--text);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+  }
+
+  .feature-desc {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    line-height: 1.8;
+  }
+
+  /* DIFFICULTY */
+  .difficulty-section {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .difficulty-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+    margin-top: 48px;
+  }
+
+  .diff-card {
+    padding: 40px 28px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    transition: all 0.3s;
+    text-align: center;
+    position: relative;
+  }
+
+  .diff-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    height: 3px;
+    width: 0;
+    transition: width 0.3s;
+  }
+
+  .diff-card.low::before { background: #28c840; }
+  .diff-card.medium::before { background: #febc2e; }
+  .diff-card.high::before { background: #ff8c00; }
+  .diff-card.impossible::before { background: #ff3d3d; }
+
+  .diff-card:hover::before { width: 100%; }
+
+  .diff-level {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 900;
+    margin-bottom: 8px;
+  }
+
+  .diff-card.low .diff-level { color: #28c840; text-shadow: 0 0 20px rgba(40,200,64,0.5); }
+  .diff-card.medium .diff-level { color: #febc2e; text-shadow: 0 0 20px rgba(254,188,46,0.5); }
+  .diff-card.high .diff-level { color: #ff8c00; text-shadow: 0 0 20px rgba(255,140,0,0.5); }
+  .diff-card.impossible .diff-level { color: #ff3d3d; text-shadow: 0 0 20px rgba(255,61,61,0.5); }
+
+  .diff-amharic {
+    font-family: 'Noto Sans Ethiopic', sans-serif;
+    font-size: 14px;
+    color: var(--text-dim);
+    margin-bottom: 20px;
+    display: block;
+  }
+
+  .diff-desc {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    line-height: 1.8;
+  }
+
+  .diff-card:hover .diff-desc { color: var(--text-dim); }
+
+  /* AI SECTION */
+  .ai-section {
+    background: radial-gradient(ellipse at 50% 0%, rgba(0,212,255,0.04) 0%, transparent 60%);
+  }
+
+  .ai-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 64px;
+    align-items: start;
+  }
+
+  .ai-feature-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .ai-feature {
+    padding: 20px 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid transparent;
+    transition: all 0.2s;
+    cursor: default;
+  }
+
+  .ai-feature:hover {
+    border-left-color: var(--blue);
+    background: rgba(0,212,255,0.03);
+    transform: translateX(6px);
+  }
+
+  .ai-feature-title {
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--blue);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+
+  .ai-feature-desc {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    line-height: 1.7;
+  }
+
+  .ai-visual {
+    position: sticky;
+    top: 100px;
+  }
+
+  .ai-card {
+    background: var(--surface);
+    border: 1px solid rgba(0,212,255,0.2);
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 0 40px rgba(0,212,255,0.05);
+  }
+
+  .ai-card-header {
+    padding: 12px 16px;
+    background: rgba(0,212,255,0.05);
+    border-bottom: 1px solid rgba(0,212,255,0.1);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--blue);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .ai-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--blue);
+    animation: pulse 2s ease infinite;
+    box-shadow: 0 0 10px var(--blue);
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  .ai-chat {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 280px;
+  }
+
+  .ai-msg {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .ai-msg.user { flex-direction: row-reverse; }
+
+  .ai-avatar {
+    width: 28px; height: 28px;
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    flex-shrink: 0;
+  }
+
+  .ai-avatar.bot { background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3); color: var(--blue); }
+  .ai-avatar.usr { background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.3); color: var(--green); }
+
+  .ai-bubble {
+    padding: 10px 14px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    line-height: 1.7;
+    border-radius: 2px;
+    max-width: 80%;
+  }
+
+  .ai-msg.bot .ai-bubble { background: rgba(0,212,255,0.06); border: 1px solid rgba(0,212,255,0.15); color: var(--text-dim); }
+  .ai-msg.user .ai-bubble { background: rgba(0,255,136,0.06); border: 1px solid rgba(0,255,136,0.15); color: var(--text-dim); }
+
+  /* ARCHITECTURE */
+  .arch-section { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+
+  .arch-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-top: 48px;
+  }
+
+  .arch-layer {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 28px;
+    position: relative;
+  }
+
+  .arch-layer-label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--green);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .arch-layer-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .arch-items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .arch-item {
+    padding: 10px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.2s;
+  }
+
+  .arch-item:hover { border-color: var(--green-muted); color: var(--text); }
+
+  .arch-item-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green-muted);
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+
+  .arch-item:hover .arch-item-dot { background: var(--green); box-shadow: 0 0 8px var(--green); }
+
+  /* CTF SECTION */
+  .ctf-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    align-items: center;
+  }
+
+  .scoreboard {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .scoreboard-header {
+    padding: 12px 16px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .sb-title { color: var(--amber); }
+  .sb-live { display: flex; align-items: center; gap: 6px; color: var(--red); }
+  .sb-live::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--red); animation: pulse 1s ease infinite; }
+
+  .scoreboard-body { padding: 0; }
+
+  .sb-row {
+    display: grid;
+    grid-template-columns: 40px 1fr 80px 80px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+    transition: background 0.2s;
+    font-family: var(--font-mono);
+    font-size: 11px;
+  }
+
+  .sb-row:last-child { border-bottom: none; }
+  .sb-row:hover { background: rgba(0,255,136,0.02); }
+  .sb-row.header { background: var(--surface2); font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); }
+
+  .sb-rank { color: var(--green); font-family: var(--font-display); font-size: 16px; font-weight: 900; }
+  .sb-rank.gold { color: var(--amber); text-shadow: 0 0 10px rgba(255,179,0,0.5); }
+  .sb-rank.silver { color: #c0c0c0; }
+  .sb-rank.bronze { color: #cd7f32; }
+
+  .sb-name { color: var(--text); }
+  .sb-score { color: var(--green); text-align: right; }
+  .sb-flag { color: var(--amber); text-align: right; font-size: 10px; }
+
+  .progress-bar {
+    width: 100%; height: 3px;
+    background: var(--border);
+    margin-top: 6px;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--green), var(--blue));
+    box-shadow: 0 0 8px rgba(0,255,136,0.5);
+  }
+
+  /* BADGES */
+  .badges-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 32px;
+  }
+
+  .badge {
+    padding: 12px 20px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    transition: all 0.2s;
+    clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
+  }
+
+  .badge:hover {
+    border-color: var(--amber);
+    color: var(--amber);
+    box-shadow: 0 0 15px rgba(255,179,0,0.15);
+  }
+
+  .badge-icon { font-size: 16px; }
+
+  /* FOOTER */
+  footer {
+    position: relative;
+    z-index: 2;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 60px 48px 40px;
+  }
+
+  .footer-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .footer-top {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 48px;
+    margin-bottom: 48px;
+  }
+
+  .footer-logo {
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--green);
+    text-shadow: var(--glow);
+    margin-bottom: 16px;
+  }
+
+  .footer-tagline {
+    font-family: 'Noto Sans Ethiopic', sans-serif;
+    font-size: 14px;
+    color: var(--amber);
+    margin-bottom: 12px;
+    opacity: 0.7;
+  }
+
+  .footer-desc {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    line-height: 1.8;
+  }
+
+  .footer-col-title {
+    font-family: var(--font-display);
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 20px;
+  }
+
+  .footer-links {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .footer-links a {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .footer-links a::before { content: '→'; color: var(--green-muted); }
+  .footer-links a:hover { color: var(--green); }
+
+  .footer-bottom {
+    border-top: 1px solid var(--border);
+    padding-top: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-copy {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  .footer-flag {
+    font-family: 'Noto Sans Ethiopic', sans-serif;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* GLITCH EFFECT */
+  .glitch {
+    position: relative;
+  }
+
+  .glitch::before,
+  .glitch::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+  }
+
+  .glitch::before {
+    color: var(--red);
+    animation: glitch1 4s infinite;
+    clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%);
+  }
+
+  .glitch::after {
+    color: var(--blue);
+    animation: glitch2 4s infinite;
+    clip-path: polygon(0 55%, 100% 55%, 100% 100%, 0 100%);
+  }
+
+  @keyframes glitch1 {
+    0%, 90%, 100% { transform: none; opacity: 0; }
+    92% { transform: translate(-3px, 0); opacity: 0.5; }
+    94% { transform: translate(3px, 0); opacity: 0.5; }
+    96% { transform: none; opacity: 0; }
+  }
+
+  @keyframes glitch2 {
+    0%, 90%, 100% { transform: none; opacity: 0; }
+    93% { transform: translate(3px, 0); opacity: 0.5; }
+    95% { transform: translate(-3px, 0); opacity: 0.5; }
+    97% { transform: none; opacity: 0; }
+  }
+
+  /* SCROLL REVEAL */
+  .reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.7s ease;
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* ETHIOPIAN DIVIDER */
+  .eth-divider {
+    text-align: center;
+    padding: 20px 0;
+    font-family: 'Noto Sans Ethiopic', sans-serif;
+    font-size: 20px;
+    color: var(--green-muted);
+    letter-spacing: 12px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .eth-divider span { opacity: 0.4; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--green-muted); }
+  ::-webkit-scrollbar-thumb:hover { background: var(--green); }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    nav { padding: 0 24px; }
+    .nav-links { display: none; }
+    section { padding: 60px 24px; }
+    .hero { padding: 100px 24px 60px; }
+    .hero-grid, .about-grid, .ai-grid, .ctf-grid, .features-grid { grid-template-columns: 1fr; }
+    .hero-terminal { display: none; }
+    .stats-inner, .difficulty-grid, .arch-grid { grid-template-columns: 1fr 1fr; }
+    .footer-top { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="matrix-canvas"></canvas>
+<div class="cursor" id="cursor"></div>
+<div class="cursor-trail" id="cursorTrail"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">EVWA<span>.</span></div>
+  <ul class="nav-links">
+    <li><a href="#about">About</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#ai">AI Engine</a></li>
+    <li><a href="#ctf">CTF</a></li>
+    <li><a href="#architecture">Architecture</a></li>
+    <a href="#contact" class="nav-cta">Launch Platform</a>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="home">
+  <div class="hero-grid">
+    <div class="hero-content">
+      <div class="hero-eyebrow">Ethiopia // Cybersecurity // 2024</div>
+      <h1 class="hero-title">
+        <span class="line1 glitch" data-text="EVWA">EVWA</span>
+        <span class="line2">Vulnerable<br>Web Academy</span>
+        <span class="line3">Ethiopian Edition</span>
+      </h1>
+      <div class="hero-amharic">የኢትዮጵያ ድር ተጋላጭ ትምህርት ቤት</div>
+      <p class="hero-desc">
+        A <strong>deliberately vulnerable</strong> web application platform built for Ethiopia's cybersecurity community. Practice real-world attack techniques in a <strong>legal, safe, and controlled</strong> environment — from OWASP Top 10 to advanced exploitation — in <strong>Amharic & English</strong>.
+      </p>
+      <div class="hero-actions">
+        <a href="#features" class="btn-primary">Explore Platform</a>
+        <a href="#about" class="btn-outline">Learn More</a>
+      </div>
+    </div>
+
+    <div class="hero-terminal">
+      <div class="terminal-header">
+        <div class="terminal-dots">
+          <span class="dot-red"></span>
+          <span class="dot-yellow"></span>
+          <span class="dot-green"></span>
+        </div>
+        <div class="terminal-title">evwa@eth-lab:~$</div>
+      </div>
+      <div class="terminal-body" id="terminalBody">
+        <!-- filled by JS -->
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="stats-inner">
+    <div class="stat-item">
+      <div class="stat-number" data-target="10">0</div>
+      <div class="stat-label">OWASP Vulnerabilities</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number" data-target="4">0</div>
+      <div class="stat-label">Difficulty Levels</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number" data-target="50">0</div>
+      <div class="stat-label">Challenge Scenarios</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number" data-target="100">0</div>
+      <div class="stat-label">Docker Isolated Labs</div>
+    </div>
+  </div>
+</div>
+
+<div class="eth-divider"><span>፠ ፠ ፠ ፠ ፠</span></div>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="section-inner">
+    <div class="about-grid">
+      <div class="about-text reveal">
+        <div class="section-label">About EVWA</div>
+        <h2 class="section-title">Built for <em>Ethiopia.</em><br>Competitive with the world.</h2>
+        <p>EVWA is modeled after globally recognized platforms like <strong>DVWA</strong> and <strong>HackTheBox</strong>, but <strong>localized for Ethiopia</strong> — with Amharic language support, culturally relevant challenge scenarios, and content designed for the Ethiopian cybersecurity ecosystem.</p>
+        <p>Students, developers, and security researchers can practice <strong>real-world attack techniques</strong> — including the full OWASP Top 10 — without harming real systems. Every challenge runs in an <strong>isolated Docker container</strong>, ensuring a safe and repeatable environment.</p>
+        <p>From fake bank portals and <strong>telecom billing systems</strong> to news sites and government portals — EVWA brings challenges that feel real and relevant to Ethiopian contexts.</p>
+
+        <div class="about-tags">
+          <span class="tag">SQL Injection</span>
+          <span class="tag">XSS</span>
+          <span class="tag">CSRF</span>
+          <span class="tag">Command Injection</span>
+          <span class="tag">SSRF</span>
+          <span class="tag">Broken Access Control</span>
+          <span class="tag">IDOR</span>
+          <span class="tag">File Upload</span>
+          <span class="tag">XXE</span>
+          <span class="tag">Insecure Deserialization</span>
+        </div>
+      </div>
+
+      <div class="about-visual reveal">
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-bottom:12px;letter-spacing:2px;">// OWASP TOP 10 COVERAGE</div>
+        <div class="owasp-grid">
+          <div class="owasp-item"><div class="owasp-num">A01</div><div class="owasp-name">Broken Access Control</div></div>
+          <div class="owasp-item"><div class="owasp-num">A02</div><div class="owasp-name">Cryptographic Failures</div></div>
+          <div class="owasp-item"><div class="owasp-num">A03</div><div class="owasp-name">SQL Injection</div></div>
+          <div class="owasp-item"><div class="owasp-num">A04</div><div class="owasp-name">Insecure Design</div></div>
+          <div class="owasp-item"><div class="owasp-num">A05</div><div class="owasp-name">Security Misconfiguration</div></div>
+          <div class="owasp-item"><div class="owasp-num">A06</div><div class="owasp-name">Vulnerable Components</div></div>
+          <div class="owasp-item"><div class="owasp-num">A07</div><div class="owasp-name">Auth & Identity Failures</div></div>
+          <div class="owasp-item"><div class="owasp-num">A08</div><div class="owasp-name">Software & Data Integrity</div></div>
+          <div class="owasp-item"><div class="owasp-num">A09</div><div class="owasp-name">Security Logging Failures</div></div>
+          <div class="owasp-item"><div class="owasp-num">A10</div><div class="owasp-name">SSRF</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features" style="background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+  <div class="section-inner">
+    <div class="reveal">
+      <div class="section-label">Platform Features</div>
+      <h2 class="section-title">Everything a security<br>researcher <em>needs</em>.</h2>
+      <p class="section-desc">EVWA is not just a static lab — it's a living, evolving cybersecurity training ecosystem with professional-grade tooling built for the next generation of Ethiopian security professionals.</p>
+    </div>
+    <div class="features-grid reveal">
+      <div class="feature-card">
+        <div class="feature-icon">🐳</div>
+        <div class="feature-title">Docker Isolation</div>
+        <div class="feature-desc">Each challenge runs in its own isolated container. No cross-contamination. Spin up, attack, reset — clean environment every time. Full Docker-based architecture for safe practice.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🏆</div>
+        <div class="feature-title">CTF Engine</div>
+        <div class="feature-desc">Live CTF competition engine with real-time scoreboard, time-limited challenges, and flag submission system. Host your own team competitions or join public events.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🇪🇹</div>
+        <div class="feature-title">Amharic Support</div>
+        <div class="feature-desc">Full Amharic language interface and challenge descriptions. Culturally relevant scenarios — Ethiopian bank portals, telecom billing, news sites, and government systems.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <div class="feature-title">Pentest Reports</div>
+        <div class="feature-desc">Auto-generated penetration testing reports after completing challenges. Export professional-grade reports in PDF/HTML format — build your portfolio as you learn.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🏅</div>
+        <div class="feature-title">Badge System</div>
+        <div class="feature-desc">Earn badges for completing challenges, discovering bugs, and reaching milestones. Showcase your expertise with a verifiable achievement profile visible to employers.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📡</div>
+        <div class="feature-title">Real-time Scoreboard</div>
+        <div class="feature-desc">WebSocket-powered live scoreboard during CTF events. Watch scores update in real time, see who just captured a flag, and track your team's ranking live.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DIFFICULTY -->
+<section class="difficulty-section" id="difficulty">
+  <div class="section-inner">
+    <div class="reveal">
+      <div class="section-label">Difficulty Levels</div>
+      <h2 class="section-title">Four levels. One <em>journey</em>.</h2>
+    </div>
+    <div class="difficulty-grid reveal">
+      <div class="diff-card low">
+        <div class="diff-level">LOW</div>
+        <span class="diff-amharic">ቀላል</span>
+        <p class="diff-desc">No security controls. Ideal for beginners learning how vulnerabilities work. Direct, clear paths to exploitation with educational explanations.</p>
+      </div>
+      <div class="diff-card medium">
+        <div class="diff-level">MEDIUM</div>
+        <span class="diff-amharic">መካከለኛ</span>
+        <p class="diff-desc">Basic defenses in place. Input validation, simple filters. Requires understanding of bypass techniques. Closer to real-world junior deployments.</p>
+      </div>
+      <div class="diff-card high">
+        <div class="diff-level">HIGH</div>
+        <span class="diff-amharic">ከባድ</span>
+        <p class="diff-desc">Strong security measures. Multiple layers of defense. Requires chaining techniques and creative thinking. Simulates hardened production environments.</p>
+      </div>
+      <div class="diff-card impossible">
+        <div class="diff-level">IMPOSSIBLE</div>
+        <span class="diff-amharic">የማይቻል</span>
+        <p class="diff-desc">Theoretically unexploitable. Demonstrates best security practices. Understand what a truly secure implementation looks like and why it works.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AI SECTION -->
+<section id="ai" class="ai-section">
+  <div class="section-inner">
+    <div class="ai-grid">
+      <div>
+        <div class="section-label reveal">AI Engine</div>
+        <h2 class="section-title reveal">Intelligence that<br><em>adapts</em> to you.</h2>
+        <p class="section-desc reveal">EVWA integrates Artificial Intelligence to transform the learning experience from passive instruction to active, personalized mentorship.</p>
+
+        <div class="ai-feature-list reveal">
+          <div class="ai-feature">
+            <div class="ai-feature-title">🤖 AI Hint System</div>
+            <div class="ai-feature-desc">Analyzes your failed attempts and delivers personalized, context-aware hints without giving away the answer. Guides your thinking, not your solution.</div>
+          </div>
+          <div class="ai-feature">
+            <div class="ai-feature-title">📚 Amharic AI Tutor</div>
+            <div class="ai-feature-desc">Explains vulnerability concepts in Amharic. Ask questions in your native language, get clear answers about SQL injection, XSS, and more.</div>
+          </div>
+          <div class="ai-feature">
+            <div class="ai-feature-title">🧭 Skill Gap Recommender</div>
+            <div class="ai-feature-desc">Analyzes your performance profile and recommends the next challenge to maximize learning velocity based on identified skill gaps.</div>
+          </div>
+          <div class="ai-feature">
+            <div class="ai-feature-title">⚡ Challenge Generator</div>
+            <div class="ai-feature-desc">Auto-generates new challenge scenarios to keep content fresh. Never runs out of practice material — new labs are synthesized on demand.</div>
+          </div>
+          <div class="ai-feature">
+            <div class="ai-feature-title">🛡️ Adaptive Defense Simulation</div>
+            <div class="ai-feature-desc">Simulates intelligent defensive systems that adapt to attacker techniques in real time. The system learns your patterns and evolves its defenses accordingly.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ai-visual reveal">
+        <div class="ai-card">
+          <div class="ai-card-header">
+            <div class="ai-dot"></div>
+            EVWA AI Tutor — ሰው ሠራሽ ሞግዚት
+          </div>
+          <div class="ai-chat" id="aiChat">
+            <div class="ai-msg bot">
+              <div class="ai-avatar bot">AI</div>
+              <div class="ai-bubble">ሰላም! ዛሬ ምን ልምድ ማካሄድ ይፈልጋሉ? / Hello! What do you want to practice today?</div>
+            </div>
+            <div class="ai-msg user">
+              <div class="ai-avatar usr">U</div>
+              <div class="ai-bubble">I keep failing the SQL injection lab. Can you help?</div>
+            </div>
+            <div class="ai-msg bot">
+              <div class="ai-avatar bot">AI</div>
+              <div class="ai-bubble">I see you've tried <code style="color:var(--green)">' OR 1=1</code> multiple times. The filter is stripping single quotes. Think about what other quote characters SQL supports... What about Unicode variants?</div>
+            </div>
+            <div class="ai-msg user">
+              <div class="ai-avatar usr">U</div>
+              <div class="ai-bubble">Oh — double quotes? Or maybe URL encoding?</div>
+            </div>
+            <div class="ai-msg bot">
+              <div class="ai-avatar bot">AI</div>
+              <div class="ai-bubble">Warm! URL encoding won't help here since the server decodes before filtering. But think about how the DB engine interprets comments... <span style="color:var(--green)">--</span> what does that do to a query? 🔍</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="badges-grid" style="margin-top:24px;">
+          <div class="badge"><span class="badge-icon">🐚</span> Shell Master</div>
+          <div class="badge"><span class="badge-icon">💉</span> SQLi Expert</div>
+          <div class="badge"><span class="badge-icon">🔓</span> Auth Bypass</div>
+          <div class="badge"><span class="badge-icon">🛡️</span> Defender</div>
+          <div class="badge"><span class="badge-icon">🌍</span> OWASP Champion</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTF -->
+<section id="ctf" style="background:var(--surface);border-top:1px solid var(--border);">
+  <div class="section-inner">
+    <div class="reveal">
+      <div class="section-label">CTF Competition Engine</div>
+      <h2 class="section-title">Compete. <em>Capture.</em> Conquer.</h2>
+      <p class="section-desc">EVWA's built-in Capture The Flag engine lets you host or join competitions with real-time scoring, team support, and live leaderboards.</p>
+    </div>
+
+    <div class="ctf-grid reveal">
+      <div>
+        <div class="scoreboard">
+          <div class="scoreboard-header">
+            <div class="sb-title">LIVE SCOREBOARD</div>
+            <div class="sb-live">LIVE</div>
+          </div>
+          <div class="scoreboard-body">
+            <div class="sb-row header">
+              <div>#</div><div>Player</div><div>Score</div><div>Flags</div>
+            </div>
+            <div class="sb-row">
+              <div class="sb-rank gold">1</div>
+              <div class="sb-name">bereket_h4x</div>
+              <div class="sb-score">4,850</div>
+              <div class="sb-flag">🚩 23</div>
+            </div>
+            <div class="sb-row">
+              <div class="sb-rank silver">2</div>
+              <div class="sb-name">tigist_sec</div>
+              <div class="sb-score">4,200</div>
+              <div class="sb-flag">🚩 20</div>
+            </div>
+            <div class="sb-row">
+              <div class="sb-rank bronze">3</div>
+              <div class="sb-name">abebe_pwn</div>
+              <div class="sb-score">3,900</div>
+              <div class="sb-flag">🚩 18</div>
+            </div>
+            <div class="sb-row">
+              <div class="sb-rank">4</div>
+              <div class="sb-name">meron_0x1</div>
+              <div class="sb-score">3,400</div>
+              <div class="sb-flag">🚩 16</div>
+            </div>
+            <div class="sb-row">
+              <div class="sb-rank">5</div>
+              <div class="sb-name">dawit_exploit</div>
+              <div class="sb-score">2,950</div>
+              <div class="sb-flag">🚩 14</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);letter-spacing:2px;margin-bottom:24px;">// ACTIVE CHALLENGE CATEGORIES</div>
+
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div style="display:flex;align-items:center;gap:16px;">
+            <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim);width:120px;">Web Exploitation</div>
+            <div class="progress-bar" style="flex:1;"><div class="progress-fill" style="width:80%;"></div></div>
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--green);width:40px;text-align:right;">800pts</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:16px;">
+            <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim);width:120px;">Crypto</div>
+            <div class="progress-bar" style="flex:1;"><div class="progress-fill" style="width:60%;background:linear-gradient(90deg,var(--amber),var(--red));"></div></div>
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--amber);width:40px;text-align:right;">600pts</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:16px;">
+            <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim);width:120px;">Forensics</div>
+            <div class="progress-bar" style="flex:1;"><div class="progress-fill" style="width:40%;background:linear-gradient(90deg,var(--blue),var(--green));"></div></div>
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--blue);width:40px;text-align:right;">400pts</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:16px;">
+            <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim);width:120px;">OSINT</div>
+            <div class="progress-bar" style="flex:1;"><div class="progress-fill" style="width:30%;background:linear-gradient(90deg,#ff3d3d,var(--amber));"></div></div>
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--red);width:40px;text-align:right;">300pts</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:16px;">
+            <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim);width:120px;">Reverse Eng.</div>
+            <div class="progress-bar" style="flex:1;"><div class="progress-fill" style="width:50%;background:linear-gradient(90deg,#ff3d3d,var(--blue));"></div></div>
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);width:40px;text-align:right;">500pts</div>
+          </div>
+        </div>
+
+        <div style="margin-top:32px;padding:20px;background:var(--bg);border:1px solid var(--border);border-left:3px solid var(--green);">
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--green);letter-spacing:2px;margin-bottom:8px;">// SCENARIO EXAMPLE</div>
+          <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim);line-height:1.8;">
+            <span style="color:var(--amber)">Mission:</span> Telebirr Mobile Banking Portal<br>
+            <span style="color:var(--amber)">Target:</span> Find the IDOR vulnerability exposing other users' transaction history.<br>
+            <span style="color:var(--green)">Flag:</span> EVWA{<span style="color:var(--text-muted)">...hidden...</span>}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ARCHITECTURE -->
+<section id="architecture" class="arch-section">
+  <div class="section-inner">
+    <div class="reveal">
+      <div class="section-label">Technical Architecture</div>
+      <h2 class="section-title">Built to <em>scale</em>.<br>Built to isolate.</h2>
+      <p class="section-desc">EVWA's Docker-based architecture ensures every student gets a clean, isolated environment. No shared state. No interference. Pure, reproducible labs.</p>
+    </div>
+    <div class="arch-grid reveal">
+      <div class="arch-layer">
+        <div class="arch-layer-label">Frontend</div>
+        <div class="arch-items">
+          <div class="arch-item"><div class="arch-item-dot"></div>React + TypeScript UI</div>
+          <div class="arch-item"><div class="arch-item-dot"></div>Amharic i18n Layer</div>
+          <div class="arch-item"><div class="arch-item-dot"></div>Real-time WebSocket</div>
+          <div class="arch-item"><div class="arch-item-dot"></div>Live Scoreboard</div>
+          <div class="arch-item"><div class="arch-item-dot"></div>Report Viewer</div>
+        </div>
+      </div>
+      <div class="arch-layer">
+        <div class="arch-layer-label">Backend</div>
+        <div class="arch-items">
+          <div class="arch-item"><div class="arch-item-dot"></div>Python / FastAPI</div>
+          <div class="arch-item"><div class="arch-item-dot"></div>JWT Authentication</div>
+          <div class="arch-item"><div class="arch-item-dot"></div>AI Integration Layer</div>
+          <div class="arch-item"><div class="arch-item-dot"></div>CTF Engine</div>
+          <div class="arch-item"><div class="arch-item-dot"></div>Report Generator</div>
+        </div>
+      </div>
+      <div class="arch-layer">
+        <div class="arch-layer-label">Infrastructure</div>
+        <div class="arch-items">
+          <div class="arch-item"><div class="arch-item-dot"></div>Docker Compose</div>
+          <div class="arch-item"><div class="arch-item-dot"></div>Nginx Reverse Proxy</div>
+          <div class="arch-item"><div class="arch-item-dot"></div>PostgreSQL + Redis</div>
+          <div class="arch-item"><div class="arch-item-dot"></div>Network Isolation</div>
+          <div class="arch-item"><div class="arch-item-dot"></div>Auto-Reset Scheduler</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="eth-divider"><span>ኢትዮጵያ ለዘለዓለም ትኑር</span></div>
+
+<!-- FOOTER -->
+<footer id="contact">
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div>
+        <div class="footer-logo">EVWA</div>
+        <div class="footer-tagline">የኢትዮጵያ ድር ተጋላጭ ትምህርት ቤት</div>
+        <p class="footer-desc">A legal, safe, and controlled environment for Ethiopia's next generation of cybersecurity professionals. Practice. Learn. Protect.</p>
+      </div>
+      <div>
+        <div class="footer-col-title">Platform</div>
+        <ul class="footer-links">
+          <li><a href="#">Challenges</a></li>
+          <li><a href="#">CTF Events</a></li>
+          <li><a href="#">Leaderboard</a></li>
+          <li><a href="#">AI Tutor</a></li>
+          <li><a href="#">Badges</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Resources</div>
+        <ul class="footer-links">
+          <li><a href="#">Documentation</a></li>
+          <li><a href="#">OWASP Guide</a></li>
+          <li><a href="#">Amharic Tutorials</a></li>
+          <li><a href="#">Report Library</a></li>
+          <li><a href="#">Blog</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Community</div>
+        <ul class="footer-links">
+          <li><a href="#">Telegram Group</a></li>
+          <li><a href="#">GitHub</a></li>
+          <li><a href="#">Discord</a></li>
+          <li><a href="#">Contribute</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2024 EVWA — Ethiopian Vulnerable Web Academy. Built for Ethiopia. Open Source.</div>
+      <div class="footer-flag">🇪🇹 Made in Ethiopia</div>
+    </div>
+  </div>
+</footer>
+
+<script>
+// CURSOR
+const cursor = document.getElementById('cursor');
+const trail = document.getElementById('cursorTrail');
+let mouseX = 0, mouseY = 0;
+document.addEventListener('mousemove', e => {
+  mouseX = e.clientX; mouseY = e.clientY;
+  cursor.style.left = mouseX - 6 + 'px';
+  cursor.style.top = mouseY - 6 + 'px';
+  setTimeout(() => {
+    trail.style.left = mouseX - 15 + 'px';
+    trail.style.top = mouseY - 15 + 'px';
+  }, 80);
+});
+
+// MATRIX CANVAS
+const canvas = document.getElementById('matrix-canvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+
+const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*<>/\\!?ሀሁሂሃሄህሆሇ';
+const fontSize = 13;
+const cols = Math.floor(canvas.width / fontSize);
+const drops = Array(cols).fill(1);
+
+function drawMatrix() {
+  ctx.fillStyle = 'rgba(3,10,6,0.05)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#00ff88';
+  ctx.font = fontSize + 'px Share Tech Mono';
+  for (let i = 0; i < drops.length; i++) {
+    const char = chars[Math.floor(Math.random() * chars.length)];
+    ctx.fillText(char, i * fontSize, drops[i] * fontSize);
+    if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+    drops[i]++;
+  }
+}
+setInterval(drawMatrix, 50);
+
+// TERMINAL ANIMATION
+const lines = [
+  { type: 'prompt', text: 'evwa@eth-lab:~$ ./launch.sh --mode=practice' },
+  { type: 'output', text: '' },
+  { type: 'success', text: '  ███████╗██╗   ██╗██╗    ██╗ █████╗' },
+  { type: 'success', text: '  ██╔════╝██║   ██║██║    ██║██╔══██╗' },
+  { type: 'success', text: '  █████╗  ██║   ██║██║ █╗ ██║███████║' },
+  { type: 'success', text: '  ██╔══╝  ╚██╗ ██╔╝██║███╗██║██╔══██║' },
+  { type: 'success', text: '  ███████╗ ╚████╔╝ ╚███╔███╔╝██║  ██║' },
+  { type: 'output', text: '' },
+  { type: 'info', text: '[*] Loading Ethiopian Vulnerable Web Academy...' },
+  { type: 'info', text: '[*] Initializing Docker containers...' },
+  { type: 'success', text: '[+] 10 OWASP challenges loaded' },
+  { type: 'success', text: '[+] 4 difficulty levels active' },
+  { type: 'success', text: '[+] AI Tutor engine online' },
+  { type: 'success', text: '[+] CTF engine ready' },
+  { type: 'info', text: '[*] Setting up Amharic language pack...' },
+  { type: 'success', text: '[+] ቋንቋ ተዘጋጅቷል (Language ready)' },
+  { type: 'output', text: '' },
+  { type: 'warn', text: '[!] WARNING: This platform contains intentional vulnerabilities' },
+  { type: 'warn', text: '[!] For educational use only. Practice legally and ethically.' },
+  { type: 'output', text: '' },
+  { type: 'prompt', text: 'evwa@eth-lab:~$ █' },
+];
+
+const termBody = document.getElementById('terminalBody');
+let lineIndex = 0;
+let charIndex = 0;
+let currentEl = null;
+
+function typeNext() {
+  if (lineIndex >= lines.length) return;
+  const line = lines[lineIndex];
+  if (!currentEl) {
+    currentEl = document.createElement('span');
+    currentEl.className = 't-line t-' + line.type;
+    termBody.appendChild(currentEl);
+  }
+  if (charIndex < line.text.length) {
+    currentEl.textContent += line.text[charIndex];
+    charIndex++;
+    const speed = line.type === 'prompt' ? 40 : 8;
+    setTimeout(typeNext, speed);
+  } else {
+    lineIndex++;
+    charIndex = 0;
+    currentEl = null;
+    const pause = line.text === '' ? 50 : 80;
+    setTimeout(typeNext, pause);
+  }
+  termBody.scrollTop = termBody.scrollHeight;
+}
+
+setTimeout(typeNext, 800);
+
+// COUNT UP ANIMATION
+function countUp(el, target) {
+  let current = 0;
+  const suffix = el.textContent.includes('+') ? '+' : '';
+  const increment = target / 60;
+  const timer = setInterval(() => {
+    current += increment;
+    if (current >= target) { current = target; clearInterval(timer); }
+    el.textContent = Math.floor(current) + suffix;
+  }, 25);
+}
+
+const statsObserver = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      document.querySelectorAll('.stat-number').forEach(el => {
+        countUp(el, parseInt(el.dataset.target));
+      });
+      statsObserver.disconnect();
+    }
+  });
+}, { threshold: 0.5 });
+statsObserver.observe(document.querySelector('.stats-bar'));
+
+// SCROLL REVEAL
+const revealObserver = new IntersectionObserver(entries => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) {
+      setTimeout(() => e.target.classList.add('visible'), i * 100);
+    }
+  });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+// ACTIVE NAV
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('.nav-links a');
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(s => {
+    if (window.scrollY >= s.offsetTop - 100) current = s.id;
+  });
+  navLinks.forEach(a => {
+    a.style.color = a.getAttribute('href') === '#' + current ? 'var(--green)' : '';
+  });
+});
+
+// SCOREBOARD ANIMATION
+function animateScoreboard() {
+  const scores = document.querySelectorAll('.sb-score');
+  scores.forEach(s => {
+    const original = parseInt(s.textContent.replace(/,/g,''));
+    const delta = Math.floor(Math.random() * 50) * (Math.random() > 0.7 ? 1 : 0);
+    if (delta > 0) {
+      const newScore = original + delta;
+      s.textContent = newScore.toLocaleString();
+      s.style.color = 'var(--amber)';
+      setTimeout(() => s.style.color = 'var(--green)', 500);
+    }
+  });
+}
+setInterval(animateScoreboard, 4000);
+
+// MOBILE MENU TOGGLE
+const menuToggle = document.getElementById('menuToggle');
+const mobileMenu = document.getElementById('mobileMenu');
+if (menuToggle && mobileMenu) {
+  menuToggle.addEventListener('click', () => {
+    mobileMenu.classList.toggle('open');
+    menuToggle.classList.toggle('active');
+  });
+  mobileMenu.querySelectorAll('a').forEach(a => {
+    a.addEventListener('click', () => {
+      mobileMenu.classList.remove('open');
+      menuToggle.classList.remove('active');
+    });
+  });
+}
+
+// SCENARIO CARD HOVER TILT
+document.querySelectorAll('.scenario-card').forEach(card => {
+  card.addEventListener('mousemove', e => {
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const cx = rect.width / 2;
+    const cy = rect.height / 2;
+    const rotX = ((y - cy) / cy) * -6;
+    const rotY = ((x - cx) / cx) * 6;
+    card.style.transform = `perspective(600px) rotateX(${rotX}deg) rotateY(${rotY}deg) translateY(-4px)`;
+  });
+  card.addEventListener('mouseleave', () => {
+    card.style.transform = '';
+  });
+});
+
+// ROADMAP PROGRESS ANIMATION
+const roadmapObserver = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.querySelectorAll('.roadmap-line-fill').forEach((fill, i) => {
+        setTimeout(() => fill.classList.add('animated'), i * 300);
+      });
+      roadmapObserver.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.2 });
+const roadmapSection = document.getElementById('roadmap');
+if (roadmapSection) roadmapObserver.observe(roadmapSection);
+
+// HOW IT WORKS STEP ANIMATION
+document.querySelectorAll('.step-card').forEach((card, i) => {
+  card.style.animationDelay = i * 0.15 + 's';
+});
+
+// PARTICLE BURST ON CTA CLICK
+document.querySelectorAll('.btn-primary').forEach(btn => {
+  btn.addEventListener('click', e => {
+    for (let i = 0; i < 12; i++) {
+      const p = document.createElement('div');
+      p.style.cssText = `
+        position:fixed;width:4px;height:4px;border-radius:50%;
+        background:var(--green);pointer-events:none;z-index:9999;
+        left:${e.clientX}px;top:${e.clientY}px;
+        box-shadow:0 0 6px var(--green);
+      `;
+      document.body.appendChild(p);
+      const angle = (i / 12) * 2 * Math.PI;
+      const dist = 60 + Math.random() * 40;
+      const tx = Math.cos(angle) * dist;
+      const ty = Math.sin(angle) * dist;
+      p.animate([
+        { transform: 'translate(0,0)', opacity: 1 },
+        { transform: `translate(${tx}px,${ty}px)`, opacity: 0 }
+      ], { duration: 600, easing: 'cubic-bezier(0,0,0.2,1)' }).onfinish = () => p.remove();
+    }
+  });
+});
+
+// TYPEWRITER LOOP for hero eyebrow rotating text
+const rotatingTexts = ['Students', 'Developers', 'Researchers', 'Penetration Testers', 'CTF Players'];
+let rtIndex = 0;
+const rtEl = document.getElementById('rotatingText');
+if (rtEl) {
+  function rotateText() {
+    rtEl.style.opacity = '0';
+    setTimeout(() => {
+      rtIndex = (rtIndex + 1) % rotatingTexts.length;
+      rtEl.textContent = rotatingTexts[rtIndex];
+      rtEl.style.opacity = '1';
+    }, 300);
+  }
+  setInterval(rotateText, 2500);
+}
+
+// SKILL RADAR CANVAS
+const radarCanvas = document.getElementById('radarCanvas');
+if (radarCanvas) {
+  const rc = radarCanvas.getContext('2d');
+  const skills = [
+    { label: 'SQL Injection', value: 0.9 },
+    { label: 'XSS', value: 0.85 },
+    { label: 'CSRF', value: 0.75 },
+    { label: 'SSRF', value: 0.7 },
+    { label: 'Cmd Inject', value: 0.8 },
+    { label: 'Auth Bypass', value: 0.65 },
+  ];
+  const cx = radarCanvas.width / 2;
+  const cy = radarCanvas.height / 2;
+  const R = Math.min(cx, cy) - 40;
+  let progress = 0;
+
+  function drawRadar(p) {
+    rc.clearRect(0, 0, radarCanvas.width, radarCanvas.height);
+    const n = skills.length;
+    const step = (2 * Math.PI) / n;
+
+    // Grid rings
+    for (let r = 1; r <= 4; r++) {
+      rc.beginPath();
+      for (let i = 0; i < n; i++) {
+        const angle = i * step - Math.PI / 2;
+        const x = cx + Math.cos(angle) * (R * r / 4);
+        const y = cy + Math.sin(angle) * (R * r / 4);
+        i === 0 ? rc.moveTo(x, y) : rc.lineTo(x, y);
+      }
+      rc.closePath();
+      rc.strokeStyle = 'rgba(0,255,136,0.07)';
+      rc.lineWidth = 1;
+      rc.stroke();
+    }
+
+    // Axes
+    for (let i = 0; i < n; i++) {
+      const angle = i * step - Math.PI / 2;
+      rc.beginPath();
+      rc.moveTo(cx, cy);
+      rc.lineTo(cx + Math.cos(angle) * R, cy + Math.sin(angle) * R);
+      rc.strokeStyle = 'rgba(0,255,136,0.1)';
+      rc.stroke();
+    }
+
+    // Data shape
+    rc.beginPath();
+    for (let i = 0; i < n; i++) {
+      const angle = i * step - Math.PI / 2;
+      const val = skills[i].value * p;
+      const x = cx + Math.cos(angle) * R * val;
+      const y = cy + Math.sin(angle) * R * val;
+      i === 0 ? rc.moveTo(x, y) : rc.lineTo(x, y);
+    }
+    rc.closePath();
+    rc.fillStyle = 'rgba(0,255,136,0.08)';
+    rc.fill();
+    rc.strokeStyle = 'rgba(0,255,136,0.6)';
+    rc.lineWidth = 1.5;
+    rc.stroke();
+
+    // Dots & labels
+    for (let i = 0; i < n; i++) {
+      const angle = i * step - Math.PI / 2;
+      const val = skills[i].value * p;
+      const x = cx + Math.cos(angle) * R * val;
+      const y = cy + Math.sin(angle) * R * val;
+      rc.beginPath();
+      rc.arc(x, y, 3, 0, 2 * Math.PI);
+      rc.fillStyle = '#00ff88';
+      rc.shadowBlur = 10;
+      rc.shadowColor = '#00ff88';
+      rc.fill();
+      rc.shadowBlur = 0;
+
+      const lx = cx + Math.cos(angle) * (R + 24);
+      const ly = cy + Math.sin(angle) * (R + 24);
+      rc.fillStyle = 'rgba(90,138,106,0.9)';
+      rc.font = '9px Share Tech Mono';
+      rc.textAlign = 'center';
+      rc.fillText(skills[i].label, lx, ly + 3);
+    }
+  }
+
+  const radarAnim = () => {
+    if (progress < 1) { progress += 0.02; drawRadar(progress); requestAnimationFrame(radarAnim); }
+    else drawRadar(1);
+  };
+  const radarObs = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting) { progress = 0; radarAnim(); radarObs.disconnect(); }
+  }, { threshold: 0.3 });
+  radarObs.observe(radarCanvas);
+}
+
+// NAV scroll style
+window.addEventListener('scroll', () => {
+  const nav = document.querySelector('nav');
+  nav.style.borderBottomColor = window.scrollY > 60 ? 'rgba(0,255,136,0.1)' : 'var(--border)';
+});
+</script>
+
+<!-- ─────────────────────────────────────────
+     ADDITIONAL SECTIONS injected here
+     ───────────────────────────────────────── -->
+
+<!-- inject point marker (sections added via JS below) -->
+<script>
+// Dynamically inject additional HTML sections before footer
+(function injectSections() {
+  const footer = document.querySelector('footer');
+
+  // ── 1. SCENARIO SECTION ──────────────────────────────────
+  const scenarioHTML = `
+  <section id="scenarios" style="background:var(--bg);border-top:1px solid var(--border);">
+    <div class="section-inner">
+      <div class="reveal">
+        <div class="section-label">Challenge Scenarios</div>
+        <h2 class="section-title">Real Ethiopian <em>contexts</em>.<br>Real attack surfaces.</h2>
+        <p class="section-desc">Every challenge is built around familiar Ethiopian digital systems — making vulnerabilities tangible, relatable, and memorable.</p>
+      </div>
+      <div class="scenarios-grid reveal"></div>
+    </div>
+  </section>`;
+
+  // ── 2. HOW IT WORKS ──────────────────────────────────────
+  const howHTML = `
+  <section id="how" style="background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+    <div class="section-inner">
+      <div class="reveal">
+        <div class="section-label">How It Works</div>
+        <h2 class="section-title">From zero to <em>exploit</em><br>in four steps.</h2>
+      </div>
+      <div class="steps-grid reveal"></div>
+    </div>
+  </section>`;
+
+  // ── 3. SKILL RADAR ────────────────────────────────────────
+  const radarHTML = `
+  <section id="skills" style="background:var(--bg);border-top:1px solid var(--border);">
+    <div class="section-inner">
+      <div class="skills-layout">
+        <div class="reveal">
+          <div class="section-label">Skill Tracking</div>
+          <h2 class="section-title">Know your <em>strengths</em>.<br>Fix your gaps.</h2>
+          <p style="color:var(--text-dim);font-size:13px;line-height:1.8;margin-bottom:32px;">EVWA tracks every attempt, every failure, every success — building a living profile of your cybersecurity skills. The AI uses this data to personalise your journey.</p>
+          <div class="skill-bars"></div>
+        </div>
+        <div class="radar-wrap reveal" style="display:flex;flex-direction:column;align-items:center;">
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);letter-spacing:2px;margin-bottom:16px;">// SKILL RADAR — LIVE PROFILE</div>
+          <canvas id="radarCanvas" width="320" height="320"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>`;
+
+  // ── 4. ROADMAP ────────────────────────────────────────────
+  const roadmapHTML = `
+  <section id="roadmap" style="background:var(--surface);border-top:1px solid var(--border);">
+    <div class="section-inner">
+      <div class="reveal">
+        <div class="section-label">Roadmap</div>
+        <h2 class="section-title">Building the <em>future</em><br>of Ethiopian security.</h2>
+      </div>
+      <div class="roadmap-track reveal"></div>
+    </div>
+  </section>`;
+
+  // ── 5. CTA ────────────────────────────────────────────────
+  const ctaHTML = `
+  <section id="contact" style="background:var(--bg);border-top:1px solid var(--border);text-align:center;padding:120px 48px;">
+    <div class="section-inner" style="max-width:700px;">
+      <div class="reveal">
+        <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:4px;color:var(--green);text-transform:uppercase;margin-bottom:24px;">// Ready to Start?</div>
+        <h2 style="font-family:var(--font-display);font-size:clamp(32px,5vw,64px);font-weight:900;color:var(--text);margin-bottom:16px;line-height:1.1;">
+          Hack. Learn.<br><em style="color:var(--green);text-shadow:var(--glow-strong)">Protect Ethiopia.</em>
+        </h2>
+        <p style="font-family:var(--font-mono);font-size:12px;color:var(--text-dim);margin-bottom:12px;">ለሚቀጥለው ትውልድ የኢትዮጵያ የሳይበር ደህንነት ባለሙያዎች</p>
+        <p style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted);margin-bottom:48px;">For the next generation of Ethiopian cybersecurity professionals.</p>
+        <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
+          <a href="#" class="btn-primary" style="font-size:12px;padding:16px 40px;">Launch Platform →</a>
+          <a href="#" class="btn-outline" style="font-size:12px;padding:16px 40px;">Join Community</a>
+        </div>
+        <div style="margin-top:48px;padding:24px;background:var(--surface);border:1px solid var(--border);text-align:left;">
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);letter-spacing:2px;margin-bottom:12px;">// CONTACT & LINKS</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+            <div>
+              <div style="font-family:var(--font-mono);font-size:9px;color:var(--green);letter-spacing:2px;margin-bottom:6px;">GITHUB</div>
+              <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);">github.com/evwa-eth</div>
+            </div>
+            <div>
+              <div style="font-family:var(--font-mono);font-size:9px;color:var(--green);letter-spacing:2px;margin-bottom:6px;">TELEGRAM</div>
+              <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);">t.me/evwa_ethiopia</div>
+            </div>
+            <div>
+              <div style="font-family:var(--font-mono);font-size:9px;color:var(--green);letter-spacing:2px;margin-bottom:6px;">EMAIL</div>
+              <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);">team@evwa.eth</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>`;
+
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = scenarioHTML + howHTML + radarHTML + roadmapHTML + ctaHTML;
+  footer.before(...wrapper.childNodes);
+
+  // ── POPULATE SCENARIOS ────────────────────────────────────
+  const scenarios = [
+    { emoji:'🏦', name:'Telebirr Bank Portal', amharic:'ቴሌቢር ባንክ', cat:'SQL Injection + IDOR', diff:'medium', desc:'A cloned Ethiopian mobile banking interface with a vulnerable login and exposed transaction endpoints. Find the SQL injection and leak admin credentials.' },
+    { emoji:'📡', name:'Ethio Telecom Billing', amharic:'ኢትዮ ቴሌኮም', cat:'Broken Access Control', diff:'high', desc:'Simulated telecom billing system. IDOR vulnerabilities allow accessing other subscribers\' usage data and invoices by manipulating account IDs.' },
+    { emoji:'📰', name:'Addis News Portal', amharic:'አዲስ ዜና', cat:'XSS + CSRF', diff:'low', desc:'A fake Ethiopian news site with a comment system. Inject stored XSS payloads that steal admin cookies and perform CSRF to publish arbitrary articles.' },
+    { emoji:'🏛️', name:'E-Government Portal', amharic:'ኢ-ገቢ', cat:'File Upload + RCE', diff:'high', desc:'Mimics an Ethiopian government document submission system. Bypass file type validation to upload a PHP webshell and achieve Remote Code Execution.' },
+    { emoji:'🎓', name:'University Registration', amharic:'ዩኒቨርሲቲ ምዝገባ', cat:'Auth Bypass + SSRF', diff:'medium', desc:'A student portal modeled after Ethiopian university systems. Exploit JWT signature issues to access admin dashboards and use SSRF to scan internal services.' },
+    { emoji:'💊', name:'Pharmacy Inventory', amharic:'ፋርማሲ', cat:'Command Injection', diff:'high', desc:'Drug inventory management system. Command injection via unsanitised search parameters allows executing OS commands on the underlying server.' },
+  ];
+
+  const diffColors = { low:'#28c840', medium:'#febc2e', high:'#ff8c00', impossible:'#ff3d3d' };
+  const grid = document.querySelector('.scenarios-grid');
+  grid.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:2px;';
+
+  scenarios.forEach(s => {
+    const card = document.createElement('div');
+    card.className = 'scenario-card';
+    card.style.cssText = `
+      padding:28px;background:var(--surface);border:1px solid var(--border);
+      transition:all 0.35s cubic-bezier(0.175,0.885,0.32,1.275);
+      position:relative;overflow:hidden;cursor:default;
+    `;
+    card.innerHTML = `
+      <div style="position:absolute;top:0;right:0;padding:6px 12px;background:rgba(0,0,0,0.4);
+        border-bottom:1px solid var(--border);border-left:1px solid var(--border);
+        font-family:var(--font-mono);font-size:9px;letter-spacing:1px;
+        color:${diffColors[s.diff]};text-transform:uppercase;">${s.diff}</div>
+      <div style="font-size:32px;margin-bottom:14px;">${s.emoji}</div>
+      <div style="font-family:var(--font-display);font-size:12px;font-weight:700;letter-spacing:2px;
+        color:var(--text);margin-bottom:4px;text-transform:uppercase;">${s.name}</div>
+      <div style="font-family:'Noto Sans Ethiopic',sans-serif;font-size:12px;color:var(--amber);
+        margin-bottom:12px;opacity:0.7;">${s.amharic}</div>
+      <div style="display:inline-block;padding:3px 10px;border:1px solid var(--green-muted);
+        font-family:var(--font-mono);font-size:9px;letter-spacing:1px;color:var(--green);
+        margin-bottom:14px;">${s.cat}</div>
+      <p style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);line-height:1.8;">${s.desc}</p>
+      <div style="margin-top:16px;font-family:var(--font-mono);font-size:10px;color:var(--green-muted);
+        transition:color 0.2s;" class="sc-launch">→ Launch Lab</div>
+    `;
+    card.addEventListener('mouseenter', () => {
+      card.style.background = 'rgba(0,255,136,0.03)';
+      card.style.borderColor = 'var(--green-muted)';
+      card.querySelector('.sc-launch').style.color = 'var(--green)';
+    });
+    card.addEventListener('mouseleave', () => {
+      card.style.background = 'var(--surface)';
+      card.style.borderColor = 'var(--border)';
+      card.querySelector('.sc-launch').style.color = 'var(--green-muted)';
+      card.style.transform = '';
+    });
+    grid.appendChild(card);
+  });
+
+  // ── POPULATE STEPS ────────────────────────────────────────
+  const steps = [
+    { n:'01', icon:'🐳', title:'Spin Up', sub:'Launch a Lab', desc:'Choose a challenge and difficulty. EVWA spins up an isolated Docker container in seconds — your personal target, ready to attack.' },
+    { n:'02', icon:'🔍', title:'Recon', sub:'Explore & Enumerate', desc:'Use Burp Suite, browser DevTools, or any tool you prefer. Enumerate endpoints, analyze HTTP responses, and map the attack surface.' },
+    { n:'03', icon:'💥', title:'Exploit', sub:'Attack & Capture', desc:'Craft your payload. Execute the attack. Capture the flag. If you get stuck, the AI hint engine analyzes your attempts and nudges you forward.' },
+    { n:'04', icon:'📋', title:'Report', sub:'Learn & Document', desc:'EVWA auto-generates a penetration testing report of your session. Review what worked, why it worked, and download a PDF for your portfolio.' },
+  ];
+
+  const stepsGrid = document.querySelector('.steps-grid');
+  stepsGrid.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;';
+
+  // connector line
+  const connector = document.createElement('div');
+  connector.style.cssText = `
+    position:absolute;top:52px;left:12.5%;right:12.5%;height:1px;
+    background:linear-gradient(90deg,var(--green-muted),var(--blue),var(--green-muted));
+    z-index:0;opacity:0.4;
+  `;
+  stepsGrid.appendChild(connector);
+
+  steps.forEach((s, i) => {
+    const card = document.createElement('div');
+    card.className = 'step-card';
+    card.style.cssText = `
+      padding:32px 24px;border:1px solid var(--border);background:var(--bg);
+      position:relative;z-index:1;transition:all 0.3s;
+      border-right:${i < steps.length-1 ? 'none' : '1px solid var(--border)'};
+    `;
+    card.innerHTML = `
+      <div style="width:52px;height:52px;border:1px solid var(--green-muted);
+        display:flex;align-items:center;justify-content:center;font-size:22px;
+        margin-bottom:20px;background:var(--bg);position:relative;
+        clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%);
+        transition:all 0.3s;" class="step-icon">${s.icon}</div>
+      <div style="font-family:var(--font-mono);font-size:9px;color:var(--green);
+        letter-spacing:3px;margin-bottom:8px;">${s.n} / ${s.sub}</div>
+      <div style="font-family:var(--font-display);font-size:14px;font-weight:700;
+        letter-spacing:2px;color:var(--text);margin-bottom:12px;text-transform:uppercase;">${s.title}</div>
+      <p style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);line-height:1.8;">${s.desc}</p>
+    `;
+    card.addEventListener('mouseenter', () => {
+      card.style.background = 'rgba(0,255,136,0.02)';
+      card.querySelector('.step-icon').style.borderColor = 'var(--green)';
+      card.querySelector('.step-icon').style.boxShadow = '0 0 20px rgba(0,255,136,0.2)';
+    });
+    card.addEventListener('mouseleave', () => {
+      card.style.background = 'var(--bg)';
+      card.querySelector('.step-icon').style.borderColor = 'var(--green-muted)';
+      card.querySelector('.step-icon').style.boxShadow = 'none';
+    });
+    stepsGrid.appendChild(card);
+  });
+
+  // ── POPULATE SKILL BARS ───────────────────────────────────
+  const skillItems = [
+    { name:'Web Exploitation', amharic:'ድር 착취', pct:82, color:'var(--green)' },
+    { name:'Cryptography', amharic:'ምስጢርድርድር', pct:54, color:'var(--blue)' },
+    { name:'Forensics', amharic:'ፎረንሲክ', pct:67, color:'var(--amber)' },
+    { name:'Reverse Engineering', amharic:'ተቃራኒ ምሕንድስና', pct:41, color:'var(--red)' },
+    { name:'OSINT', amharic:'ኦሲኢንቲ', pct:73, color:'#c084fc' },
+  ];
+
+  const skillBarsEl = document.querySelector('.skill-bars');
+  skillBarsEl.style.cssText = 'display:flex;flex-direction:column;gap:16px;';
+  skillItems.forEach(sk => {
+    const row = document.createElement('div');
+    row.innerHTML = `
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+        <div>
+          <span style="font-family:var(--font-mono);font-size:11px;color:var(--text);">${sk.name}</span>
+          <span style="font-family:'Noto Sans Ethiopic',sans-serif;font-size:10px;color:var(--text-muted);margin-left:8px;">${sk.amharic}</span>
+        </div>
+        <span style="font-family:var(--font-display);font-size:11px;font-weight:700;color:${sk.color};">${sk.pct}%</span>
+      </div>
+      <div style="height:4px;background:var(--border);position:relative;overflow:hidden;">
+        <div class="skill-fill" style="height:100%;width:0%;background:${sk.color};
+          box-shadow:0 0 8px ${sk.color};transition:width 1.2s cubic-bezier(0.4,0,0.2,1);"
+          data-width="${sk.pct}%"></div>
+      </div>
+    `;
+    skillBarsEl.appendChild(row);
+  });
+
+  // animate skill bars on scroll
+  const skillObs = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting) {
+      document.querySelectorAll('.skill-fill').forEach(f => {
+        f.style.width = f.dataset.width;
+      });
+      skillObs.disconnect();
+    }
+  }, { threshold: 0.3 });
+  const skillSection = document.getElementById('skills');
+  if (skillSection) skillObs.observe(skillSection);
+
+  // skills layout
+  const skillsLayout = document.querySelector('.skills-layout');
+  if (skillsLayout) {
+    skillsLayout.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center;';
+  }
+
+  // ── POPULATE ROADMAP ──────────────────────────────────────
+  const roadmapItems = [
+    { phase:'Phase 1', status:'done', label:'Complete', title:'Core Platform', amharic:'መሰረታዊ መድረክ', items:['Docker lab architecture','OWASP Top 10 challenges','4 difficulty levels','Basic scoring system'] },
+    { phase:'Phase 2', status:'done', label:'Complete', title:'Ethiopian Localization', amharic:'የኢትዮጵያ አካባቢ ማስቀመጥ', items:['Amharic UI translation','Local scenario design','Telebirr & Ethio Telecom labs','Community beta testing'] },
+    { phase:'Phase 3', status:'active', label:'In Progress', title:'CTF & Competitive Engine', amharic:'የ CTF ሞተር', items:['Live CTF competition mode','Real-time scoreboard','Team formation system','Badge & achievement system'] },
+    { phase:'Phase 4', status:'upcoming', label:'Upcoming', title:'AI Integration', amharic:'ሰው ሰራሽ ብልሃት', items:['AI hint engine','Amharic AI tutor','Skill gap recommender','Challenge auto-generator'] },
+    { phase:'Phase 5', status:'upcoming', label:'Future', title:'National Deployment', amharic:'ብሔራዊ ማሰማራት', items:['University partnerships','Government endorsement','Annual CTF competition','Open source release'] },
+  ];
+
+  const statusColors = { done:'var(--green)', active:'var(--amber)', upcoming:'var(--text-muted)' };
+  const statusBg = { done:'rgba(0,255,136,0.08)', active:'rgba(255,179,0,0.06)', upcoming:'var(--surface)' };
+
+  const track = document.querySelector('.roadmap-track');
+  track.style.cssText = 'display:grid;grid-template-columns:repeat(5,1fr);gap:2px;margin-top:48px;';
+
+  roadmapItems.forEach((r, i) => {
+    const card = document.createElement('div');
+    const isActive = r.status === 'active';
+    card.style.cssText = `
+      padding:24px 20px;background:${statusBg[r.status]};
+      border:1px solid ${r.status === 'done' ? 'var(--green-muted)' : r.status === 'active' ? 'rgba(255,179,0,0.2)' : 'var(--border)'};
+      position:relative;transition:all 0.3s;
+      ${isActive ? 'box-shadow:0 0 30px rgba(255,179,0,0.05);' : ''}
+    `;
+    card.innerHTML = `
+      <div style="position:absolute;top:-1px;left:0;right:0;height:3px;
+        background:${statusColors[r.status]};
+        ${r.status === 'upcoming' ? 'opacity:0.2;' : ''}
+        ${r.status === 'active' ? 'box-shadow:0 0 10px var(--amber);' : ''}
+        ${r.status === 'done' ? 'box-shadow:0 0 8px rgba(0,255,136,0.4);' : ''}"></div>
+      <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:2px;
+        color:${statusColors[r.status]};text-transform:uppercase;margin-bottom:4px;">${r.phase}</div>
+      <div style="display:inline-block;padding:2px 8px;border:1px solid ${statusColors[r.status]};
+        font-family:var(--font-mono);font-size:8px;letter-spacing:1px;
+        color:${statusColors[r.status]};margin-bottom:14px;
+        ${r.status === 'upcoming' ? 'opacity:0.4;' : ''}">${r.label}</div>
+      <div style="font-family:var(--font-display);font-size:11px;font-weight:700;letter-spacing:1px;
+        color:${r.status === 'upcoming' ? 'var(--text-dim)' : 'var(--text)'};
+        text-transform:uppercase;margin-bottom:4px;">${r.title}</div>
+      <div style="font-family:'Noto Sans Ethiopic',sans-serif;font-size:11px;
+        color:var(--text-muted);margin-bottom:14px;">${r.amharic}</div>
+      <ul style="list-style:none;display:flex;flex-direction:column;gap:6px;">
+        ${r.items.map(it => `
+          <li style="font-family:var(--font-mono);font-size:9px;
+            color:${r.status === 'upcoming' ? 'var(--text-muted)' : 'var(--text-dim)'};
+            display:flex;align-items:flex-start;gap:6px;">
+            <span style="color:${statusColors[r.status]};
+              ${r.status === 'upcoming' ? 'opacity:0.4;' : ''}flex-shrink:0;">
+              ${r.status === 'done' ? '✓' : r.status === 'active' ? '◆' : '○'}
+            </span>${it}</li>`).join('')}
+      </ul>
+    `;
+    track.appendChild(card);
+  });
+
+  // Re-observe new .reveal elements
+  document.querySelectorAll('.reveal:not(.visible)').forEach(el => revealObserver.observe(el));
+
+  // Mobile nav inject
+  const nav = document.querySelector('nav');
+  const toggleBtn = document.createElement('button');
+  toggleBtn.id = 'menuToggle';
+  toggleBtn.setAttribute('aria-label','Toggle menu');
+  toggleBtn.style.cssText = `
+    display:none;background:none;border:1px solid var(--border);
+    color:var(--green);padding:6px 10px;font-family:var(--font-mono);
+    font-size:11px;cursor:pointer;transition:all 0.2s;
+  `;
+  toggleBtn.textContent = '[ MENU ]';
+  toggleBtn.addEventListener('mouseenter', () => { toggleBtn.style.borderColor = 'var(--green)'; toggleBtn.style.background = 'rgba(0,255,136,0.05)'; });
+  toggleBtn.addEventListener('mouseleave', () => { toggleBtn.style.borderColor = 'var(--border)'; toggleBtn.style.background = 'none'; });
+  nav.appendChild(toggleBtn);
+
+  const mobileMenu = document.createElement('div');
+  mobileMenu.id = 'mobileMenu';
+  mobileMenu.style.cssText = `
+    position:fixed;top:64px;left:0;right:0;background:rgba(3,10,6,0.97);
+    border-bottom:1px solid var(--border);z-index:99;padding:24px 24px;
+    display:none;flex-direction:column;gap:16px;backdrop-filter:blur(16px);
+  `;
+  mobileMenu.innerHTML = `
+    <a href="#about" style="font-family:var(--font-mono);font-size:13px;color:var(--text-dim);text-decoration:none;padding:10px 0;border-bottom:1px solid var(--border);">// About</a>
+    <a href="#features" style="font-family:var(--font-mono);font-size:13px;color:var(--text-dim);text-decoration:none;padding:10px 0;border-bottom:1px solid var(--border);">// Features</a>
+    <a href="#scenarios" style="font-family:var(--font-mono);font-size:13px;color:var(--text-dim);text-decoration:none;padding:10px 0;border-bottom:1px solid var(--border);">// Scenarios</a>
+    <a href="#ai" style="font-family:var(--font-mono);font-size:13px;color:var(--text-dim);text-decoration:none;padding:10px 0;border-bottom:1px solid var(--border);">// AI Engine</a>
+    <a href="#ctf" style="font-family:var(--font-mono);font-size:13px;color:var(--text-dim);text-decoration:none;padding:10px 0;border-bottom:1px solid var(--border);">// CTF</a>
+    <a href="#roadmap" style="font-family:var(--font-mono);font-size:13px;color:var(--text-dim);text-decoration:none;padding:10px 0;border-bottom:1px solid var(--border);">// Roadmap</a>
+    <a href="#contact" style="font-family:var(--font-mono);font-size:13px;color:var(--green);text-decoration:none;padding:10px 0;">// Launch Platform →</a>
+  `;
+  document.body.appendChild(mobileMenu);
+
+  // handle toggle
+  toggleBtn.addEventListener('click', () => {
+    const open = mobileMenu.style.display === 'flex';
+    mobileMenu.style.display = open ? 'none' : 'flex';
+    toggleBtn.textContent = open ? '[ MENU ]' : '[ CLOSE ]';
+  });
+  mobileMenu.querySelectorAll('a').forEach(a => {
+    a.addEventListener('click', () => {
+      mobileMenu.style.display = 'none';
+      toggleBtn.textContent = '[ MENU ]';
+    });
+  });
+
+  // CSS for mobile
+  const mobileStyle = document.createElement('style');
+  mobileStyle.textContent = `
+    @media (max-width:900px) {
+      #menuToggle { display:block !important; }
+      .scenarios-grid { grid-template-columns:1fr !important; }
+      .steps-grid { grid-template-columns:1fr 1fr !important; }
+      .steps-grid > div:nth-child(odd) { border-right:none !important; }
+      .steps-grid > div { border-bottom:none !important; }
+      .roadmap-track { grid-template-columns:1fr !important; }
+      .skills-layout { grid-template-columns:1fr !important; }
+      #radarCanvas { width:260px !important; height:260px !important; }
+    }
+    @media (max-width:600px) {
+      .steps-grid { grid-template-columns:1fr !important; }
+      .scenarios-grid { grid-template-columns:1fr !important; }
+    }
+  `;
+  document.head.appendChild(mobileStyle);
+})();
+</script>
+</body>
+</html>
